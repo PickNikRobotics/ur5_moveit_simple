@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(PACKAGE_NAME)
+project(ur5_moveit_simple)
 
 # C++ 14
 add_compile_options(-std=c++14)
@@ -16,8 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   roslint
   rosparam_shortcuts
   rviz_visual_tools
-  std_msgs
-  rospy
+  moveit_simple
 )
 
 # System dependencies are found with CMake's conventions
@@ -30,8 +29,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
   CATKIN_DEPENDS
     roscpp
-    std_msgs
-    rospy
+    moveit_simple
   INCLUDE_DIRS
     include
   LIBRARIES
@@ -40,7 +38,6 @@ catkin_package(
     Boost
     EIGEN3
 )
-catkin_python_setup()
 
 ###########
 ## Build ##
@@ -59,36 +56,22 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-# Declare a C++ library with project namespace to avoid naming collision
-add_library(
-  ${PROJECT_NAME}
-  src/CPP_CLASS_FILE_NAME.cpp
-)
-
-# Specify libraries to link a library or executable target against
-target_link_libraries(
-  ${PROJECT_NAME}
-  ${catkin_LIBRARIES}
-  ${Boost_LIBRARIES}
-)
-
 # Declare a C++ executable
 add_executable(
-  ${PROJECT_NAME}_CPP_EXECUTABLE_NAME
-  src/CPP_EXECUTABLE_NAME.cpp
+  ${PROJECT_NAME}_ur5_demo
+  src/ur5_demo.cpp
 )
 
 # Rename C++ executable without namespace
 set_target_properties(
-  ${PROJECT_NAME}_CPP_EXECUTABLE_NAME
+  ${PROJECT_NAME}_ur5_demo
   PROPERTIES
-    OUTPUT_NAME CPP_EXECUTABLE_NAME PREFIX ""
+    OUTPUT_NAME ur5_demo PREFIX ""
 )
 
 # Specify libraries to link a library or executable target against
 target_link_libraries(
-  ${PROJECT_NAME}_CPP_EXECUTABLE_NAME
-  ${PROJECT_NAME}
+  ${PROJECT_NAME}_ur5_demo
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
 )
@@ -100,7 +83,7 @@ target_link_libraries(
 # Mark executables and/or libraries for installation
 install(
   TARGETS
-    ${PROJECT_NAME} ${PROJECT_NAME}_CPP_EXECUTABLE_NAME
+    ${PROJECT_NAME} ${PROJECT_NAME}_ur5_demo
   ARCHIVE DESTINATION
     ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION
@@ -116,9 +99,6 @@ install(
   DESTINATION
     ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
-
-catkin_install_python(PROGRAMS scripts/PYTHON_EXECUTABLE_NAME.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 # Mark roslaunch files for installation
 install(
@@ -143,8 +123,8 @@ install(
 if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
 
-  add_rostest_gtest(CPP_CLASS_FILE_NAME_test test/CPP_CLASS_FILE_NAME_test.test test/CPP_CLASS_FILE_NAME_test.cpp)
-  target_link_libraries(CPP_CLASS_FILE_NAME_test
+  add_rostest_gtest(class_name_test test/class_name_test.test test/class_name_test.cpp)
+  target_link_libraries(class_name_test
     ${PROJECT_NAME}
     ${catkin_LIBRARIES}
     ${Boost_LIBRARIES}

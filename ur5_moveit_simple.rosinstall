@@ -1,0 +1,10 @@
+# Used with wstool, users can download and source of all packages in this.
+
+- git:
+    local-name: ur_modern_driver
+    uri: git@github.com:ros-industrial/ur_modern_driver.git
+    version: kinetic-devel
+- git:
+    local-name: universal_robot
+    uri: git@github.com:ros-industrial/universal_robot.git
+    version: kinetic-devel

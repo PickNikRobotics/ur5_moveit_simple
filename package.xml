@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>PACKAGE_NAME</name>
+  <name>ur5_moveit_simple</name>
   <version>0.0.1</version>
-  <description>PACKAGE_DESCRIPTION</description>
+  <description>A demo using moveit_simple with the ur5</description>
 
-  <maintainer email="EMAIL_ADDRESS">FIRST_NAME LAST_NAME</maintainer>
-  <author email="EMAIL_ADDRESS">FIRST_NAME LAST_NAME</author>
+  <maintainer email="mike@picknik.ai">Mike Lautman</maintainer>
+  <author email="mike@picknik.ai">Mike Lautman</author>
 
   <license>BSD</license>
 
-  <url type="website">https://github.com/PickNikRobotics/PACKAGE_NAME</url>
-  <url type="bugtracker">https://github.com/PickNikRobotics/PACKAGE_NAME/issues</url>
-  <url type="repository">https://github.com/PickNikRobotics/PACKAGE_NAME/</url>
+  <url type="website">https://github.com/PickNikRobotics/ur5_moveit_simple</url>
+  <url type="bugtracker">https://github.com/PickNikRobotics/ur5_moveit_simple/issues</url>
+  <url type="repository">https://github.com/PickNikRobotics/ur5_moveit_simple/</url>
 
   <buildtool_depend>catkin</buildtool_depend>
 
@@ -20,8 +20,10 @@
   <depend>rosparam_shortcuts</depend>
   <depend>eigen</depend>
   <depend>rviz_visual_tools</depend>
-  <depend>std_msgs</depend>
-  <depend>rospy</depend>
+  <depend>moveit_simple</depend>
+  <depend>ur5_moveit_config</depend>
+  <depend>ur_modern_driver</depend>
+
   <depend version_eq="3.9">clang-format</depend>
 
   <test_depend>rostest</test_depend>
