@@ -22,12 +22,9 @@
   <depend>rviz_visual_tools</depend>
   <depend>moveit_simple</depend>
   <depend>ur5_moveit_config</depend>
-  <depend>ur_modern_driver</depend>
+  <depend>universal_robot</depend>
 
   <depend version_eq="3.9">clang-format</depend>
-
-  <test_depend>rostest</test_depend>
-  <test_depend>rosunit</test_depend>
 
   <export>
   </export>

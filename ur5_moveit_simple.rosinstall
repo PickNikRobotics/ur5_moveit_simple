@@ -4,7 +4,14 @@
     local-name: ur_modern_driver
     uri: git@github.com:ros-industrial/ur_modern_driver.git
     version: kinetic-devel
+
 - git:
-    local-name: universal_robot
-    uri: git@github.com:ros-industrial/universal_robot.git
+    uri: https://github.com/PickNikRobotics/robotiq.git
+    local-name: robotiq/robotiq
     version: kinetic-devel
+
+# 2F-85 robotiq gripper
+- git:
+    uri: https://github.com/beta-robots/robotiq.git
+    local-name: robotiq/robotiq_2f_85
+    version: master

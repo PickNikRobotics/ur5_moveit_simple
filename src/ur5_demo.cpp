@@ -24,14 +24,14 @@
 
 int main(int argc, char **argv)
 {
-  std::string name = "bin_pick_server_main";
+  std::string name = "moveit_simple";
   ros::init(argc, argv, name);
 
   ros::AsyncSpinner spinner(4);
   spinner.start();
 
   auto robot = std::unique_ptr<moveit_simple::OnlineRobot> (new moveit_simple::OnlineRobot
-                    (ros::NodeHandle(), "robot_description", "manipulator"));
+                    (ros::NodeHandle(), "robot_description", "arm", "base_link", "tool_custom"));
 
   const std::string trajectory_name("traj1");
   const Eigen::Isometry3d pose = Eigen::Isometry3d::Identity();
@@ -39,14 +39,18 @@ int main(int argc, char **argv)
   const moveit_simple::InterpolationType joint = moveit_simple::interpolation_type::JOINT;
 
   robot->addTrajPoint(trajectory_name, "home",      1.0);
-  robot->addTrajPoint(trajectory_name, "waypoint1", 2.0, joint, 5);
-  robot->addTrajPoint(trajectory_name, "tf_pub1",   3.0, cart, 8);
-  robot->addTrajPoint(trajectory_name, "waypoint2", 4.0);
-  robot->addTrajPoint(trajectory_name, "waypoint3", 5.0, joint);
-  robot->addTrajPoint(trajectory_name, "waypoint1", 6.0, joint);
-  robot->addTrajPoint(trajectory_name, "waypoint3", 7.0, cart);
-  robot->addTrajPoint(trajectory_name, "waypoint1", 8.0, cart);
-  robot->addTrajPoint(trajectory_name, pose, "tool0", 9.0);
+  robot->addTrajPoint(trajectory_name, "tf_pub1",   2.0, joint, 8);
+  robot->addTrajPoint(trajectory_name, "tf_pub2",   3.0, joint, 8);
+  // robot->addTrajPoint(trajectory_name, "home",      9.0, joint);
+  // robot->addTrajPoint(trajectory_name, "tf_pub1",   9.0, cart, 8);
+  // robot->addTrajPoint(trajectory_name, "tf_pub2",   12.0, cart, 8);
+  // robot->addTrajPoint(trajectory_name, "waypoint2", 4.0);
+  // robot->addTrajPoint(trajectory_name, "waypoint3", 5.0, joint);
+  // robot->addTrajPoint(trajectory_name, "waypoint1", 6.0, joint);
+  // robot->addTrajPoint(trajectory_name, "waypoint3", 7.0, cart);
+  // robot->addTrajPoint(trajectory_name, "waypoint1", 8.0, cart);
+  // robot->addTrajPoint(trajectory_name, pose, "tool0", 9.0);
+  // robot->addTrajPoint(trajectory_name, "home",      5.0);
 
   robot->execute(trajectory_name);
 

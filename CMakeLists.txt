@@ -29,9 +29,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
   CATKIN_DEPENDS
     roscpp
-    moveit_simple
   INCLUDE_DIRS
-    include
   LIBRARIES
     ${PROJECT_NAME}
   DEPENDS
@@ -52,7 +50,6 @@ include_directories(
 )
 
 include_directories(
-  include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -83,21 +80,13 @@ target_link_libraries(
 # Mark executables and/or libraries for installation
 install(
   TARGETS
-    ${PROJECT_NAME} ${PROJECT_NAME}_ur5_demo
+    ${PROJECT_NAME}_ur5_demo
   ARCHIVE DESTINATION
     ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION
     ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION
     ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-# Mark cpp header files for installation
-install(
-  DIRECTORY
-    include/${PROJECT_NAME}/
-  DESTINATION
-    ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
 
 # Mark roslaunch files for installation
@@ -115,22 +104,6 @@ install(
   DESTINATION
     ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
-
-#############
-## Testing ##
-#############
-
-if(CATKIN_ENABLE_TESTING)
-  find_package(rostest REQUIRED)
-
-  add_rostest_gtest(class_name_test test/class_name_test.test test/class_name_test.cpp)
-  target_link_libraries(class_name_test
-    ${PROJECT_NAME}
-    ${catkin_LIBRARIES}
-    ${Boost_LIBRARIES}
-  )
-
-endif()
 
 ## Test for correct C++ source code
 roslint_cpp()
