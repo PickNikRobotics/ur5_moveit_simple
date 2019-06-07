@@ -10,28 +10,26 @@
   <!-- ur5 -->
   <xacro:include filename="$(find ur_description)/urdf/ur5.urdf.xacro" />
 
-  <!-- arm -->
-  <xacro:ur5_robot prefix="" joint_limited="true"
-    shoulder_pan_lower_limit="${-pi}" shoulder_pan_upper_limit="${pi}"
-    shoulder_lift_lower_limit="${-pi}" shoulder_lift_upper_limit="${pi}"
-    elbow_joint_lower_limit="${-pi}" elbow_joint_upper_limit="${pi}"
-    wrist_1_lower_limit="${-pi}" wrist_1_upper_limit="${pi}"
-    wrist_2_lower_limit="${-pi}" wrist_2_upper_limit="${pi}"
-    wrist_3_lower_limit="${-pi}" wrist_3_upper_limit="${pi}"
-    transmission_hw_interface="$(arg transmission_hw_interface)"
-  />
+  <!-- arm joint limited -->
+  <!-- <xacro:ur5_robot prefix="" joint_limited="true" -->
+    <!-- shoulder_pan_lower_limit="${-pi}" shoulder_pan_upper_limit="${pi}" -->
+    <!-- shoulder_lift_lower_limit="${-pi}" shoulder_lift_upper_limit="${pi}" -->
+    <!-- elbow_joint_lower_limit="${-pi}" elbow_joint_upper_limit="${pi}" -->
+    <!-- wrist_1_lower_limit="${-pi}" wrist_1_upper_limit="${pi}" -->
+    <!-- wrist_2_lower_limit="${-pi}" wrist_2_upper_limit="${pi}" -->
+    <!-- wrist_3_lower_limit="${-pi}" wrist_3_upper_limit="${pi}" -->
+    <!-- transmission_hw_interface="$(arg transmission_hw_interface)"/> -->
 
-  <!-- arm -->
-  <!-- <xacro:ur5_robot prefix="" joint_limited="false" -->
-    <!-- transmission_hw_interface="$(arg transmission_hw_interface)" -->
-  <!-- /> -->
+  <!-- arm - not joint limited -->
+  <xacro:ur5_robot prefix="" joint_limited="false"
+    transmission_hw_interface="$(arg transmission_hw_interface)"/>
 
   <!-- Robotiq -->
-  <!-- <xacro:include filename="$(find robotiq_2f_model)/model/robotiq_2f_85.urdf.xacro" /> -->
+  <xacro:include filename="$(find robotiq_2f_model)/model/robotiq_2f_85.urdf.xacro" />
 
-  <!-- <xacro:robotiq_2f_85  name="robotiq_2f_85" parent="tool0"> -->
-    <!-- <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" /> -->
-  <!-- </xacro:robotiq_2f_85> -->
+  <xacro:robotiq_2f_85  name="robotiq_2f_85" parent="tool0">
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+  </xacro:robotiq_2f_85>
 
   <link name="table">
     <visual>

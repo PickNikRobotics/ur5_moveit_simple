@@ -39,8 +39,8 @@ int main(int argc, char **argv)
   const moveit_simple::InterpolationType joint = moveit_simple::interpolation_type::JOINT;
 
   robot->addTrajPoint(trajectory_name, "home",      1.0);
-  robot->addTrajPoint(trajectory_name, "tf_pub1",   2.0, joint, 8);
-  robot->addTrajPoint(trajectory_name, "tf_pub2",   3.0, joint, 8);
+  robot->addTrajPoint(trajectory_name, "tf_pub1",   2.0, joint, 15);
+  robot->addTrajPoint(trajectory_name, "tf_pub2",   3.0, joint, 15);
   // robot->addTrajPoint(trajectory_name, "home",      9.0, joint);
   // robot->addTrajPoint(trajectory_name, "tf_pub1",   9.0, cart, 8);
   // robot->addTrajPoint(trajectory_name, "tf_pub2",   12.0, cart, 8);
