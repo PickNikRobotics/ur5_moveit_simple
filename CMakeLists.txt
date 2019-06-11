@@ -17,6 +17,8 @@ find_package(catkin REQUIRED COMPONENTS
   rosparam_shortcuts
   rviz_visual_tools
   moveit_simple
+  tf
+  moveit_core
 )
 
 # System dependencies are found with CMake's conventions
@@ -29,6 +31,8 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
   CATKIN_DEPENDS
     roscpp
+    tf
+    moveit_core
   INCLUDE_DIRS
   LIBRARIES
     ${PROJECT_NAME}

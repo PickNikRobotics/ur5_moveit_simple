@@ -22,7 +22,8 @@
   <depend>rviz_visual_tools</depend>
   <depend>moveit_simple</depend>
   <depend>ur5_moveit_config</depend>
-  <depend>universal_robot</depend>
+  <depend>moveit_core</depend>
+  <depend>tf</depend>
 
   <depend version_eq="3.9">clang-format</depend>
 

@@ -95,8 +95,8 @@ You must also have a working installation of `docker`.
 
 1. Build the docker image
 
-    cd $CATKIN_WS/src/ur5_moveit_simple/.docker
-    cp ~/.ssh/id_rsa id_rsa && docker build -t ur5_moveit_simple:kinetic-source .; rm id_rsa
+        cd $CATKIN_WS/src/ur5_moveit_simple/.docker
+        cp ~/.ssh/id_rsa id_rsa && docker build -t ur5_moveit_simple:kinetic-source .; rm id_rsa
 
 1. Run the docker image
 
