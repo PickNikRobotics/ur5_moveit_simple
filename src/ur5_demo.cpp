@@ -28,6 +28,10 @@
 #include <moveit_simple/moveit_simple.h>
 #include <moveit_simple/prettyprint.hpp>
 
+#include <Eigen/Geometry>
+#include <eigen_conversions/eigen_msg.h>
+#include <tf/transform_datatypes.h>
+
 namespace moveit_simple
 {
 
@@ -38,29 +42,25 @@ public:
   : OnlineRobot(ros::NodeHandle(), "robot_description", "arm", "base_link", "tool0")
   {
     refreshRobot();
-    //planning_scene_monitor_.reset(
-    //    new planning_scene_monitor::PlanningSceneMonitor(planning_scene_, robot_model_loader_));
+    planning_scene_monitor_.reset(
+        new planning_scene_monitor::PlanningSceneMonitor(planning_scene_, robot_model_loader_));
 
-    //planning_scene_monitor_->setPlanningScenePublishingFrequency(100);
-    //planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
-    //planning_scene_monitor_->startStateMonitor();
-    //planning_scene_monitor_->startSceneMonitor("/planning_scene");
+    planning_scene_monitor_->setPlanningScenePublishingFrequency(100);
+    planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE, "/planning_scene");
+    planning_scene_monitor_->startStateMonitor();
+    planning_scene_monitor_->startSceneMonitor("/planning_scene");
 
-    //// Spin while we wait for the full robot state to become available
+    // Spin while we wait for the full robot state to become available
     //while (!planning_scene_monitor_->getStateMonitor()->haveCompleteState() && ros::ok())
     //{
     //  ROS_INFO_STREAM_THROTTLE_NAMED(1, "UR5Demo", "Waiting for complete state from topic ");
     //}
 
-    //visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("/world", "/moveit_visual_marker", planning_scene_monitor_));
-    //visual_tools_->setPlanningSceneTopic("/planning_scene");
-    //visual_tools_->loadMarkerPub();
-    //visual_tools_->loadTrajectoryPub("/robot_traj_display");
-    //visual_tools_->deleteAllMarkers();  // clear all old markers
-    //visual_tools_->enableBatchPublishing();
-    //visual_tools_->hideRobot();         // show that things have been reset
-    //visual_tools_->trigger();
-
+    online_visual_tools_->setPlanningSceneMonitor(planning_scene_monitor_);
+    online_visual_tools_->loadMarkerPub();
+    online_visual_tools_->deleteAllMarkers();  // clear all old markers
+    online_visual_tools_->enableBatchPublishing();
+    online_visual_tools_->trigger();
   }
 
   bool planTrajectory()
@@ -91,10 +91,98 @@ public:
     }
   }
 
+  bool spawnObject(const geometry_msgs::Pose& pose)
+  {
+    online_visual_tools_->publishCollisionCuboid(pose, 0.04, 0.04, 0.15, "object", rviz_visual_tools::colors::GREEN);
+    online_visual_tools_->triggerPlanningSceneUpdate();
+    return true;
+  }
+
+  bool runPickAndPlace()
+  {
+    geometry_msgs::Pose object_pose;
+    object_pose.orientation.w = 1.0;
+    object_pose.position.y = 0.5;
+    object_pose.position.x = 0.2;
+    object_pose.position.z = 0.075;
+    spawnObject(object_pose);
+
+    // create pick pose
+    Eigen::Isometry3d pick_pose;
+    object_pose.position.z = 0.3;
+    object_pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(0, M_PI, 0);
+    tf::poseMsgToEigen(object_pose, pick_pose);
+
+    // create place pose
+    Eigen::Isometry3d place_pose = pick_pose * Eigen::Translation3d(0.2, 0, 0);
+
+    std::vector<double> seed, pick_state, place_state;
+    try{
+      if (getPickPlaceJointSolutions(pick_pose, place_pose, "tool0", 1.0, seed, pick_state, place_state))
+      {
+        // compute actual pick/place points
+        Eigen::Isometry3d pick_down_pose, place_down_pose;
+        getPose(pick_state, pick_down_pose);
+        pick_down_pose *= Eigen::Translation3d(0, 0, 0.05);
+        getPose(place_state, place_down_pose);
+        place_down_pose *= Eigen::Translation3d(0, 0, 0.05);
+
+        const moveit_simple::InterpolationType cart = moveit_simple::interpolation_type::CARTESIAN;
+        const moveit_simple::InterpolationType joint = moveit_simple::interpolation_type::JOINT;
+        std::unique_ptr<moveit_simple::TrajectoryPoint> pick_point = std::unique_ptr<moveit_simple::TrajectoryPoint>(
+            new moveit_simple::JointTrajectoryPoint(pick_state, 0.0, "pick_point"));
+        std::unique_ptr<moveit_simple::TrajectoryPoint> pick_point2 = std::unique_ptr<moveit_simple::TrajectoryPoint>(
+            new moveit_simple::JointTrajectoryPoint(pick_state, 0.0, "pick_point"));
+        std::unique_ptr<moveit_simple::TrajectoryPoint> pick_down_point = std::unique_ptr<moveit_simple::TrajectoryPoint>(
+            new moveit_simple::CartTrajectoryPoint(pick_down_pose, 0.0, "pick_down_point"));
+
+        std::unique_ptr<moveit_simple::TrajectoryPoint> place_point = std::unique_ptr<moveit_simple::TrajectoryPoint>(
+            new moveit_simple::JointTrajectoryPoint(place_state, 0.0, "place_point"));
+        std::unique_ptr<moveit_simple::TrajectoryPoint> place_point2 = std::unique_ptr<moveit_simple::TrajectoryPoint>(
+            new moveit_simple::JointTrajectoryPoint(place_state, 0.0, "place_point"));
+        std::unique_ptr<moveit_simple::TrajectoryPoint> place_down_point = std::unique_ptr<moveit_simple::TrajectoryPoint>(
+            new moveit_simple::CartTrajectoryPoint(place_down_pose, 0.0, "place_down_point"));
+
+
+        // TODO(henningkayser): move to pre-pose that doesn't collide when interpolating to pick_point
+        bool check_collisions = false;
+        std::string pick_traj_name = "pick_approach";
+        addTrajPoint(pick_traj_name, pick_point, joint, 100);
+        addTrajPoint(pick_traj_name, pick_down_point, cart, 10);
+        execute(pick_traj_name, check_collisions, true);
+
+        // pick object
+        online_visual_tools_->attachCO("object", "tool0");
+
+        // lift, move, lower
+        pick_traj_name = "pick_move";
+        addTrajPoint(pick_traj_name, pick_point2, cart, 10);
+        addTrajPoint(pick_traj_name, place_point, cart, 50);
+        addTrajPoint(pick_traj_name, place_down_point, cart, 10);
+        execute(pick_traj_name, check_collisions, true);
+
+        // drop object
+        online_visual_tools_->cleanupACO("object");
+
+        // retreat
+        pick_traj_name = "pick_retreat";
+        addTrajPoint(pick_traj_name, place_point2, cart, 50);
+        execute(pick_traj_name, check_collisions, true);
+      }
+    }
+    catch (const std::exception& e)
+    {
+      ROS_ERROR_STREAM("Execution failed: " << e.what());
+      return false;
+    }
+    return true;
+  }
+
   std::string trajectory_name_;
 
   // For visualizing things in rviz
   moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
+  planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
 };
 }
 
@@ -112,17 +200,17 @@ int main(int argc, char **argv)
   // limit joint windup
   // TODO(henningkayser): add suitable waypoints to showcase this feature
   demo->setLimitJointWindup(true);
-  std::map<size_t, double> seed_fractions; // pull all joints towards 0
-  seed_fractions[0] = 0.1;
-  seed_fractions[1] = 0.1;
-  seed_fractions[2] = 0.1;
-  seed_fractions[3] = 0.1;
-  seed_fractions[4] = 0.1;
-  seed_fractions[5] = 0.1;
+  std::map<size_t, double> seed_fractions;
+  seed_fractions[5] = 0.5; // limit wrist joint windup
   demo->setIKSeedStateFractions(seed_fractions);
-  //TODO(henningkayser): showcase symmetric IK (pick/place)
 
-  // plan & execute trajectory
+  // define end effector symmetry type and axis
+  demo->setEndEffectorSymmetry(moveit_simple::EndEffectorSymmetry::Rectangular, Eigen::Vector3d::UnitZ());
+
+  // run simple pick and place
+  demo->runPickAndPlace();
+
+  // plan and execute waypoint trajectory
   demo->planTrajectory();
   demo->executeTrajectory();
 
