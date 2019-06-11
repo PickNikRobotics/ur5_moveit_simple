@@ -13,7 +13,7 @@
   <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
 
   <!-- Launch RViz -->
-  <include file="$(find moveit_simple)/test/launch/test_display.launch"/>
+  <!-- <include file="$(find moveit_simple)/test/launch/test_display.launch"/> -->
 
   <!-- Launch UR5 -->
   <include file="$(find picknik_ur5_moveit_config)/launch/planning_context.launch">
