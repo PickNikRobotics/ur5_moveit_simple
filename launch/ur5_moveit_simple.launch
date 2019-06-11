@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="run_demo" default="false"/>
+  <!-- Debug Info -->
+  <arg name="debug" default="false" />
+  <arg unless="$(arg debug)" name="launch_prefix" value="" />
+  <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
+
+  <!-- Load up parameter server, based on standard planning_context.launch moveit file-->
+  <!-- The name of the parameter under which the URDF is loaded -->
+  <arg name="robot_description" default="robot_description"/>
+
+  <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
+  <include file="$(find picknik_ur5_moveit_config)/launch/planning_context.launch">
+    <arg name="load_robot_description" value="true"/>
+  </include>
+
+  <!-- Load Joint Names from the yaml files to override default joint names (Joint_1,..) -->
+  <rosparam command="load" file="$(find ur5_moveit_simple)/config/joint_names.yaml"/>
+
+  <!-- Static tranform publisher for testing tf lookup -->
+  <node name="tf_pub1" type="static_transform_publisher" pkg="tf" args="0.3 0.2 0.6 0.0 1.57 0.0 world tf_pub1 100"/>
+  <node name="tf_pub2" type="static_transform_publisher" pkg="tf" args="0.3 0.1 0.6 3.14 0.0 0.0 world tf_pub2 100"/>
+
+  <!-- Static tranform publisher between table and world -->
+  <node pkg="tf" type="static_transform_publisher" name="tfdummy" args="0 0 0 0 0 0 /world /table 10" />
+
+  <node name="joint_trajectory_action" type="joint_trajectory_action" pkg="industrial_robot_client"/>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen" />
+  <node name="robot_simulator" pkg="industrial_robot_simulator" type="industrial_robot_simulator"/>
+
+  <!-- Run Rviz and load the default config to see the state of the move_group node -->
+  <include file="$(find picknik_ur5_moveit_config)/launch/moveit_rviz.launch">
+    <arg name="rviz_config" value="$(find ur5_moveit_simple)/launch/ur5_moveit_simple.rviz"/>
+    <arg name="debug" value="$(arg debug)"/>
+  </include>
+
+  <!-- Test Node -->
+  <node if="$(arg run_demo)" name="ur5_demo" pkg="ur5_moveit_simple" type="ur5_demo"
+  launch-prefix="$(arg launch_prefix)" />
+</launch>

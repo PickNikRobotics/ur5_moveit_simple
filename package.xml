@@ -20,6 +20,7 @@
   <depend>rosparam_shortcuts</depend>
   <depend>eigen</depend>
   <depend>rviz_visual_tools</depend>
+  <depend>moveit_visual_tools</depend>
   <depend>moveit_simple</depend>
   <depend>ur5_moveit_config</depend>
   <depend>moveit_core</depend>

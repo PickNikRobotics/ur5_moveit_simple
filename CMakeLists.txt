@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   rosparam_shortcuts
   rviz_visual_tools
   moveit_simple
+  moveit_visual_tools
   tf
   moveit_core
 )
