@@ -19,11 +19,13 @@
   <arg name="simulate_robotiq" default="true" />
 
   <!-- Nodes for simulating robot motion and state -->
-  <!-- <group if="$(arg sim)"> -->
-    <!-- <node name="joint_trajectory_action" type="joint_trajectory_action" pkg="industrial_robot_client"/> -->
-    <!-- <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/> -->
-    <!-- <node name="robot_simulator" pkg="industrial_robot_simulator" type="industrial_robot_simulator"/> -->
-  <!-- </group> -->
+  <node name="joint_trajectory_action" type="joint_trajectory_action" pkg="industrial_robot_client"/>
+  <!-- Given the published joint states, publish tf for the robot links -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+  <group if="$(arg sim)">
+    <node name="robot_simulator" pkg="industrial_robot_simulator" type="industrial_robot_simulator"/>
+  </group>
 
   <!-- Launch controller manager in this namespace -->
   <include if="$(arg sim)" ns="ur5_demo" file="$(find picknik_ur5_moveit_config)/launch/trajectory_execution.launch.xml">
@@ -39,21 +41,6 @@
     <!-- <arg name="simulate_robotiq" value="$(arg simulate_robotiq)"/> -->
     <arg name="robot_ip" value="$(arg robot_ip)"/>
   </include>
-
-  <!-- If we do not have a robot connected, we publish fake joint states -->
-  <!-- TODO (mlautman): put correct source and add trajectory execution functionality. -->
-  <!-- TODO (mlautman): add unless fake execution that launches ur_modern_driver bringup. -->
-  <node if="$(arg sim)" name="joint_state_publisher" pkg="joint_state_publisher"
-        type="joint_state_publisher">
-    <rosparam param="source_list">[/ur5_demo/fake_controller_joint_states, /joint_states]</rosparam>
-  </node>
-  <node unless="$(arg sim)" name="joint_state_publisher" pkg="joint_state_publisher"
-        type="joint_state_publisher">
-    <rosparam param="source_list">[/ur5_demo/joint_states, /simple_gripper/joint_states]</rosparam>
-  </node>
-
-  <!-- Given the published joint states, publish tf for the robot links -->
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen" />
 
   <!-- URDF file for Custom Tool  -->
   <arg name="urdf_file_custom_tool" default="$(find ur5_moveit_simple)/urdf/ur5_custom_tool.urdf"/>

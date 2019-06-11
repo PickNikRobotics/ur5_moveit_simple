@@ -35,31 +35,31 @@ class UR5Demo : public OnlineRobot
 {
 public:
   UR5Demo()
-  : OnlineRobot(ros::NodeHandle(), "robot_description", "arm", "base_link", "tool0")
+  : OnlineRobot(ros::NodeHandle(), "robot_description", "arm", "base_link", "tool_custom")
   {
     refreshRobot();
-    //planning_scene_monitor_.reset(
-    //    new planning_scene_monitor::PlanningSceneMonitor(planning_scene_, robot_model_loader_));
+    planning_scene_monitor_.reset(
+       new planning_scene_monitor::PlanningSceneMonitor(planning_scene_, robot_model_loader_));
 
-    //planning_scene_monitor_->setPlanningScenePublishingFrequency(100);
-    //planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
-    //planning_scene_monitor_->startStateMonitor();
-    //planning_scene_monitor_->startSceneMonitor("/planning_scene");
+    planning_scene_monitor_->setPlanningScenePublishingFrequency(100);
+    planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
+    planning_scene_monitor_->startStateMonitor();
+    planning_scene_monitor_->startSceneMonitor("/planning_scene");
 
-    //// Spin while we wait for the full robot state to become available
-    //while (!planning_scene_monitor_->getStateMonitor()->haveCompleteState() && ros::ok())
-    //{
-    //  ROS_INFO_STREAM_THROTTLE_NAMED(1, "UR5Demo", "Waiting for complete state from topic ");
-    //}
+    // Spin while we wait for the full robot state to become available
+    while (!planning_scene_monitor_->getStateMonitor()->haveCompleteState() && ros::ok())
+    {
+     ROS_INFO_STREAM_THROTTLE_NAMED(1, "UR5Demo", "Waiting for complete state from topic ");
+    }
 
-    //visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("/world", "/moveit_visual_marker", planning_scene_monitor_));
-    //visual_tools_->setPlanningSceneTopic("/planning_scene");
-    //visual_tools_->loadMarkerPub();
-    //visual_tools_->loadTrajectoryPub("/robot_traj_display");
-    //visual_tools_->deleteAllMarkers();  // clear all old markers
-    //visual_tools_->enableBatchPublishing();
-    //visual_tools_->hideRobot();         // show that things have been reset
-    //visual_tools_->trigger();
+    visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("/world", "/moveit_visual_marker", planning_scene_monitor_));
+    visual_tools_->setPlanningSceneTopic("/planning_scene");
+    visual_tools_->loadMarkerPub();
+    visual_tools_->loadTrajectoryPub("/robot_traj_display");
+    visual_tools_->deleteAllMarkers();  // clear all old markers
+    visual_tools_->enableBatchPublishing();
+    visual_tools_->hideRobot();         // show that things have been reset
+    visual_tools_->trigger();
 
   }
 
@@ -70,9 +70,28 @@ public:
     const moveit_simple::InterpolationType cart = moveit_simple::interpolation_type::CARTESIAN;
     const moveit_simple::InterpolationType joint = moveit_simple::interpolation_type::JOINT;
 
+    if (false)
+    {
+      moveit::core::RobotStatePtr virtual_state = visual_tools_->getSharedRobotState();
+      visual_tools_->prompt("home");
+      virtual_state->setToDefaultValues(joint_group_, "home");
+      virtual_state->update();
+      visual_tools_->publishRobotState(virtual_state);
+      visual_tools_->trigger();
+      visual_tools_->prompt("ready");
+      virtual_state->setToDefaultValues(joint_group_, "ready");
+      virtual_state->update();
+      visual_tools_->publishRobotState(virtual_state);
+      visual_tools_->trigger();
+      visual_tools_->prompt("done");
+      visual_tools_->hideRobot();
+      visual_tools_->trigger();
+    }
+
     addTrajPoint(trajectory_name_, "home",      0.0, joint);
-    addTrajPoint(trajectory_name_, "tf_pub1",   0.0, joint, 8);
-    addTrajPoint(trajectory_name_, "tf_pub2",   12.0, joint, 8);
+    addTrajPoint(trajectory_name_, "ready",      0.0, joint);
+    // addTrajPoint(trajectory_name_, "tf_pub1",   0.0, cart, 8);
+    // addTrajPoint(trajectory_name_, "tf_pub2",   12.0, cart, 8);
     ROS_INFO_NAMED("UR5Demo", "plan finished");
     return true;
   }
@@ -93,6 +112,8 @@ public:
 
   std::string trajectory_name_;
 
+  // PSM
+  planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
   // For visualizing things in rviz
   moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
 };
