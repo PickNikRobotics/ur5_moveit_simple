@@ -42,22 +42,30 @@ public:
   : OnlineRobot(ros::NodeHandle(), "robot_description", "arm", "base_link", "tool0")
   {
     refreshRobot();
-    planning_scene_monitor_.reset(
-        new planning_scene_monitor::PlanningSceneMonitor(planning_scene_, robot_model_loader_));
 
-    planning_scene_monitor_->setPlanningScenePublishingFrequency(100);
-    planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE, "/planning_scene");
-    planning_scene_monitor_->startStateMonitor();
-    planning_scene_monitor_->startSceneMonitor("/planning_scene");
+    // planning_scene_monitor_.reset(
+        // new planning_scene_monitor::PlanningSceneMonitor(planning_scene_, robot_model_loader_));
+
+    // if (planning_scene_monitor_->getPlanningScene())
+    // {
+      // planning_scene_monitor->startSceneMonitor();
+      // planning_scene_monitor->startWorldGeometryMonitor();
+      // planning_scene_monitor->startStateMonitor();
+      // planning_scene_monitor_->setPlanningScenePublishingFrequency(100);
+      // planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE, "/planning_scene");
+      // planning_scene_monitor_->startSceneMonitor("/planning_scene");
+    // }
 
     // Spin while we wait for the full robot state to become available
-    //while (!planning_scene_monitor_->getStateMonitor()->haveCompleteState() && ros::ok())
-    //{
+    // while (!planning_scene_monitor_->getStateMonitor()->haveCompleteState() && ros::ok())
+    // {
     //  ROS_INFO_STREAM_THROTTLE_NAMED(1, "UR5Demo", "Waiting for complete state from topic ");
-    //}
+    // }
 
-    online_visual_tools_->setPlanningSceneMonitor(planning_scene_monitor_);
+    // online_visual_tools_->setPlanningSceneMonitor(planning_scene_monitor_);
+    online_visual_tools_->setPlanningSceneTopic("/planning_scene");
     online_visual_tools_->loadMarkerPub();
+    online_visual_tools_->loadTrajectoryPub("/display_planned_path");
     online_visual_tools_->deleteAllMarkers();  // clear all old markers
     online_visual_tools_->enableBatchPublishing();
     online_visual_tools_->trigger();
@@ -97,6 +105,15 @@ public:
     online_visual_tools_->triggerPlanningSceneUpdate();
     return true;
   }
+  void setIKSeedMidPoint(const std::string &pose_id)
+  {
+    robot_state::RobotStatePtr virtual_state = online_visual_tools_->getSharedRobotState();
+    virtual_state->setToDefaultValues(joint_group_, pose_id);
+    virtual_state->update();
+    std::vector<double> mid_point;
+    virtual_state->copyJointGroupPositions(joint_group_, mid_point);
+    setIKSeedStateMidPoint(mid_point);
+  }
 
   bool runPickAndPlace()
   {
@@ -106,6 +123,7 @@ public:
     object_pose.position.x = 0.2;
     object_pose.position.z = 0.075;
     spawnObject(object_pose);
+    online_visual_tools_->prompt("continue");
 
     // create pick pose
     Eigen::Isometry3d pick_pose;
@@ -114,9 +132,16 @@ public:
     tf::poseMsgToEigen(object_pose, pick_pose);
 
     // create place pose
-    Eigen::Isometry3d place_pose = pick_pose * Eigen::Translation3d(0.2, 0, 0);
+    Eigen::Isometry3d place_pose = pick_pose * Eigen::Translation3d(0.0, -1.0, 0);
 
     std::vector<double> seed, pick_state, place_state;
+
+    // Use ready as seed
+    robot_state::RobotStatePtr virtual_state = online_visual_tools_->getSharedRobotState();
+    virtual_state->setToDefaultValues(joint_group_, "ready");
+    virtual_state->update();
+    virtual_state->copyJointGroupPositions(joint_group_, seed);
+
     try{
       if (getPickPlaceJointSolutions(pick_pose, place_pose, "tool0", 1.0, seed, pick_state, place_state))
       {
@@ -146,28 +171,42 @@ public:
 
         // TODO(henningkayser): move to pre-pose that doesn't collide when interpolating to pick_point
         bool check_collisions = false;
-        std::string pick_traj_name = "pick_approach";
-        addTrajPoint(pick_traj_name, pick_point, joint, 100);
-        addTrajPoint(pick_traj_name, pick_down_point, cart, 10);
-        execute(pick_traj_name, check_collisions, true);
+        std::string traj_name = "pick_approach";
+        clearTrajectory(traj_name);
+        addTrajPoint(traj_name, "ready", 3, joint, 100);
+        addTrajPoint(traj_name, pick_point, joint, 100);
+        addTrajPoint(traj_name, pick_down_point, cart, 10);
+        ROS_ERROR_STREAM("pick_approach");
+        online_visual_tools_->prompt("pick approach");
+        execute(traj_name, check_collisions, true);
 
         // pick object
         online_visual_tools_->attachCO("object", "tool0");
+        online_visual_tools_->trigger();
 
         // lift, move, lower
-        pick_traj_name = "pick_move";
-        addTrajPoint(pick_traj_name, pick_point2, cart, 10);
-        addTrajPoint(pick_traj_name, place_point, cart, 50);
-        addTrajPoint(pick_traj_name, place_down_point, cart, 10);
-        execute(pick_traj_name, check_collisions, true);
+        traj_name = "pick_move";
+        clearTrajectory(traj_name);
+        addTrajPoint(traj_name, pick_point2, cart, 10);
+        addTrajPoint(traj_name, place_point, cart, 50);
+        addTrajPoint(traj_name, place_down_point, cart, 10);
+        ROS_ERROR_STREAM("place");
+        online_visual_tools_->prompt("pick");
+        execute(traj_name, check_collisions, true);
 
         // drop object
         online_visual_tools_->cleanupACO("object");
+        online_visual_tools_->trigger();
 
         // retreat
-        pick_traj_name = "pick_retreat";
-        addTrajPoint(pick_traj_name, place_point2, cart, 50);
-        execute(pick_traj_name, check_collisions, true);
+        traj_name = "place_retreat";
+        clearTrajectory(traj_name);
+        addTrajPoint(traj_name, place_point2, cart, 50);
+        addTrajPoint(traj_name, "ready", 4, joint, 100);
+        ROS_ERROR_STREAM("place retreat");
+        online_visual_tools_->prompt("place retreat");
+        execute(traj_name, check_collisions, true);
+
       }
     }
     catch (const std::exception& e)
@@ -182,8 +221,10 @@ public:
 
   // For visualizing things in rviz
   moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
-  planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
+  // planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
 };
+
+
 }
 
 int main(int argc, char **argv)
@@ -201,20 +242,28 @@ int main(int argc, char **argv)
   // TODO(henningkayser): add suitable waypoints to showcase this feature
   demo->setLimitJointWindup(true);
   std::map<size_t, double> seed_fractions;
-  seed_fractions[5] = 0.5; // limit wrist joint windup
+  seed_fractions[0] = 0.1; // limit base windup
+  seed_fractions[1] = 1; // limit shoulder windup
+  seed_fractions[2] = 1; // limit elbow windup
+  seed_fractions[3] = 0.7; // limit wrist 1 joint windup
+  seed_fractions[4] = 0.7; // limit wrist 2 joint windup
+  seed_fractions[5] = 0.7; // limit wrist 3 joint windup
   demo->setIKSeedStateFractions(seed_fractions);
 
+  demo->setIKSeedMidPoint("ready");
   // define end effector symmetry type and axis
   demo->setEndEffectorSymmetry(moveit_simple::EndEffectorSymmetry::Rectangular, Eigen::Vector3d::UnitZ());
 
   // run simple pick and place
-  demo->runPickAndPlace();
+  while (ros::ok())
+    demo->runPickAndPlace();
 
   // plan and execute waypoint trajectory
-  demo->planTrajectory();
-  demo->executeTrajectory();
+  // demo->planTrajectory();
+  // demo->executeTrajectory();
 
-  ros::waitForShutdown();
+  // ros::waitForShutdown();
+  ros::shutdown();
   return 0;
 
 }
