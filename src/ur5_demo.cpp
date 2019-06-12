@@ -183,6 +183,8 @@ public:
         // TODO(henningkayser): move to pre-pose that doesn't collide when interpolating to pick_point
         openGripper();
         bool check_collisions = false;
+        double velocity_scaling = 0.6;
+        double acceleration_scaling = 0.6;
         std::string traj_name = "pick_approach";
         clearTrajectory(traj_name);
         addTrajPoint(traj_name, "ready", 3, joint, 100);
@@ -190,7 +192,7 @@ public:
         addTrajPoint(traj_name, pick_down_point, cart, 10);
         ROS_ERROR_STREAM("pick_approach");
         online_visual_tools_->prompt("pick approach");
-        execute(traj_name, check_collisions, true);
+        execute(traj_name, check_collisions, true, velocity_scaling, acceleration_scaling);
 
         // pick object
         online_visual_tools_->attachCO("object", "tool0");
@@ -205,7 +207,7 @@ public:
         addTrajPoint(traj_name, place_down_point, cart, 10);
         ROS_ERROR_STREAM("place");
         online_visual_tools_->prompt("pick");
-        execute(traj_name, check_collisions, true);
+        execute(traj_name, check_collisions, true, velocity_scaling, acceleration_scaling);
         openGripper();
 
         // drop object
@@ -219,7 +221,7 @@ public:
         addTrajPoint(traj_name, "ready", 4, joint, 100);
         ROS_ERROR_STREAM("place retreat");
         online_visual_tools_->prompt("place retreat");
-        execute(traj_name, check_collisions, true);
+        execute(traj_name, check_collisions, true, velocity_scaling, acceleration_scaling);
 
       }
     }
