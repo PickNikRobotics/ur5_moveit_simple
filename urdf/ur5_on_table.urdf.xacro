@@ -33,9 +33,10 @@
 
   <link name="tool_link">
     <visual>
-      <origin xyz="0 0 0.125"/>
+      <origin xyz="0 0 0.0875"/>
       <geometry>
-        <cylinder length="0.25" radius="0.06"/>
+        <box size="0.1 0.02 0.175"/>
+        <!-- <cylinder length="0.25" radius="0.06"/> -->
       </geometry>
       <material name="green">
         <color rgba="0 1 0 1"/>

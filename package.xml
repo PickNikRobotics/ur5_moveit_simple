@@ -25,6 +25,7 @@
   <depend>ur5_moveit_config</depend>
   <depend>moveit_core</depend>
   <depend>tf</depend>
+  <depend>robotiq_2f_gripper_control</depend>
 
   <depend version_eq="3.9">clang-format</depend>
 

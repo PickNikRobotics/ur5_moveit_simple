@@ -1,19 +1,18 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="run_demo" default="false"/>
+  <arg name="run_demo" default="true"/>
   <!-- Debug Info -->
   <arg name="debug" default="false" />
   <arg unless="$(arg debug)" name="launch_prefix" value="" />
   <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
 
+  <arg name="sim" default="true"/>
+  <arg name="robot_ip" default="10.0.1.133" />
+
   <!-- Load up parameter server, based on standard planning_context.launch moveit file-->
   <!-- The name of the parameter under which the URDF is loaded -->
   <arg name="robot_description" default="robot_description"/>
 
-  <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
-  <include file="$(find picknik_ur5_moveit_config)/launch/planning_context.launch">
-    <arg name="load_robot_description" value="true"/>
-  </include>
 
   <!-- Load Joint Names from the yaml files to override default joint names (Joint_1,..) -->
   <rosparam command="load" file="$(find ur5_moveit_simple)/config/joint_names.yaml"/>
@@ -25,10 +24,32 @@
   <!-- Static tranform publisher between table and world -->
   <node pkg="tf" type="static_transform_publisher" name="tfdummy" args="0 0 0 0 0 0 /world /table 10" />
 
-  <node name="joint_trajectory_action" type="joint_trajectory_action" pkg="industrial_robot_client"/>
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen" />
-  <node name="robot_simulator" pkg="industrial_robot_simulator" type="industrial_robot_simulator"/>
 
+  <group if="$(arg sim)">
+    <node name="joint_trajectory_action" type="joint_trajectory_action" pkg="industrial_robot_client"/>
+    <node name="robot_simulator" pkg="industrial_robot_simulator" type="industrial_robot_simulator"/>
+    <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
+    <include file="$(find picknik_ur5_moveit_config)/launch/planning_context.launch">
+      <arg name="load_robot_description" value="true"/>
+    </include>
+  </group>
+
+  <group unless="$(arg sim)">
+
+    <remap from="/vel_based_pos_traj_controller/follow_joint_trajectory" to="/joint_trajectory_action"/>
+    <include file="$(find picknik_ur5_moveit_config)/launch/ur5_ros_control.launch">
+      <arg name="robot_ip"         value="$(arg robot_ip)"/>
+      <arg name="limited"          value="false"/>
+      <arg name="load_description" value="false" />
+    </include>
+
+    <!-- Launch moveit -->
+    <include file="$(find picknik_ur5_moveit_config)/launch/move_group.launch">
+      <arg name="debug" default="$(arg debug)" />
+    </include>
+
+  </group>
   <!-- Run Rviz and load the default config to see the state of the move_group node -->
   <include file="$(find picknik_ur5_moveit_config)/launch/moveit_rviz.launch">
     <arg name="rviz_config" value="$(find ur5_moveit_simple)/launch/ur5_moveit_simple.rviz"/>
