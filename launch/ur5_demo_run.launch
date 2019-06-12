@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- Debug Info -->
+  <arg name="debug" default="false" />
+  <arg unless="$(arg debug)" name="launch_prefix" value="" />
+  <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
+
+  <!-- Test Node -->
+  <node name="ur5_demo" pkg="ur5_moveit_simple" type="ur5_demo"
+  launch-prefix="$(arg launch_prefix)" />
+
+</launch>
