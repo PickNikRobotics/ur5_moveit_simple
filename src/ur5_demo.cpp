@@ -133,7 +133,6 @@ public:
     object_pose.position.x = 0.2;
     object_pose.position.z = 0.075;
     spawnObject(object_pose);
-    online_visual_tools_->prompt("continue");
 
     // create pick pose
     double approach_distance = 0.075;
@@ -152,6 +151,11 @@ public:
     virtual_state->setToDefaultValues(joint_group_, "ready");
     virtual_state->update();
     virtual_state->copyJointGroupPositions(joint_group_, seed);
+
+    double velocity_scaling = 0.6;
+    double acceleration_scaling = 0.6;
+    setMaxVelocityScalingFactor(velocity_scaling);
+    setMaxAccelerationScalingFactor(acceleration_scaling);
 
     try{
       if (getPickPlaceJointSolutions(pick_pose, place_pose, "tool0", 1.0, seed, pick_state, place_state))
@@ -183,31 +187,40 @@ public:
         // TODO(henningkayser): move to pre-pose that doesn't collide when interpolating to pick_point
         openGripper();
         bool check_collisions = false;
-        double velocity_scaling = 0.6;
-        double acceleration_scaling = 0.6;
-        std::string traj_name = "pick_approach";
+        std::string traj_name = "home";
         clearTrajectory(traj_name);
         addTrajPoint(traj_name, "ready", 3, joint, 100);
+        ROS_ERROR_STREAM("press 'next' in RvizVisaualToolsGui to execute 'home'");
+        online_visual_tools_->prompt("home");
+        execute(traj_name, check_collisions, true);
+        openGripper();
+
+        traj_name = "pick";
+        clearTrajectory(traj_name);
         addTrajPoint(traj_name, pick_point, joint, 100);
         addTrajPoint(traj_name, pick_down_point, cart, 10);
-        ROS_ERROR_STREAM("pick_approach");
-        online_visual_tools_->prompt("pick approach");
-        execute(traj_name, check_collisions, true, velocity_scaling, acceleration_scaling);
+        ROS_ERROR_STREAM("press 'next' in RvizVisaualToolsGui to execute 'pick'");
+        online_visual_tools_->prompt("pick");
+        execute(traj_name, check_collisions, true);
 
         // pick object
         online_visual_tools_->attachCO("object", "tool0");
         online_visual_tools_->trigger();
         closeGripper();
 
-        // lift, move, lower
-        traj_name = "pick_move";
+        traj_name = "pick_retreat";
         clearTrajectory(traj_name);
         addTrajPoint(traj_name, pick_point2, cart, 10);
+        execute(traj_name, check_collisions, true);
+
+        // lift, move, lower
+        traj_name = "place";
+        clearTrajectory(traj_name);
         addTrajPoint(traj_name, place_point, cart, 50);
         addTrajPoint(traj_name, place_down_point, cart, 10);
-        ROS_ERROR_STREAM("place");
-        online_visual_tools_->prompt("pick");
-        execute(traj_name, check_collisions, true, velocity_scaling, acceleration_scaling);
+        ROS_ERROR_STREAM("press 'next' in RvizVisaualToolsGui to execute 'place'");
+        online_visual_tools_->prompt("place");
+        execute(traj_name, check_collisions, true);
         openGripper();
 
         // drop object
@@ -218,11 +231,7 @@ public:
         traj_name = "place_retreat";
         clearTrajectory(traj_name);
         addTrajPoint(traj_name, place_point2, cart, 50);
-        addTrajPoint(traj_name, "ready", 4, joint, 100);
-        ROS_ERROR_STREAM("place retreat");
-        online_visual_tools_->prompt("place retreat");
-        execute(traj_name, check_collisions, true, velocity_scaling, acceleration_scaling);
-
+        execute(traj_name, check_collisions, true);
       }
     }
     catch (const std::exception& e)

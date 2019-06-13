@@ -2,7 +2,7 @@
 
 - git:
     local-name: ur_modern_driver
-    uri: git@github.com:ros-industrial/ur_modern_driver.git
+    uri: https://github.com/ros-industrial/ur_modern_driver.git
     version: kinetic-devel
 
 - git:
