@@ -37,17 +37,15 @@
 
 namespace moveit_simple
 {
-
 class UR5Demo : public OnlineRobot
 {
 public:
-  UR5Demo(ros::NodeHandle nh)
-  : OnlineRobot(nh, "robot_description", "arm", "base_link", "tool0")
-  , nh_(nh)
+  UR5Demo(ros::NodeHandle nh) : OnlineRobot(nh, "robot_description", "arm", "base_link", "tool0"), nh_(nh)
   {
     refreshRobot();
 
-    robotiq_publisher_ = nh_.advertise<robotiq_2f_gripper_control::Robotiq2FGripper_robot_output>("Robotiq2FGripperRobotOutput", 10);
+    robotiq_publisher_ =
+        nh_.advertise<robotiq_2f_gripper_control::Robotiq2FGripper_robot_output>("Robotiq2FGripperRobotOutput", 10);
     if (false)
       loadPlanningSceneMonitor();
 
@@ -70,14 +68,15 @@ public:
       planning_scene_monitor_->startWorldGeometryMonitor();
       planning_scene_monitor_->startStateMonitor();
       planning_scene_monitor_->setPlanningScenePublishingFrequency(100);
-      planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE, "/planning_scene");
+      planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE,
+                                                            "/planning_scene");
       planning_scene_monitor_->startSceneMonitor("/planning_scene");
     }
 
     // Spin while we wait for the full robot state to become available
     while (!planning_scene_monitor_->getStateMonitor()->haveCompleteState() && ros::ok())
     {
-     ROS_INFO_STREAM_THROTTLE_NAMED(1, "UR5Demo", "Waiting for complete state from topic ");
+      ROS_INFO_STREAM_THROTTLE_NAMED(1, "UR5Demo", "Waiting for complete state from topic ");
     }
 
     online_visual_tools_->setPlanningSceneMonitor(planning_scene_monitor_);
@@ -89,7 +88,7 @@ public:
     online_visual_tools_->triggerPlanningSceneUpdate();
     return true;
   }
-  void setIKSeedMidPoint(const std::string &pose_id)
+  void setIKSeedMidPoint(const std::string& pose_id)
   {
     robot_state::RobotStatePtr virtual_state = online_visual_tools_->getSharedRobotState();
     virtual_state->setToDefaultValues(joint_group_, pose_id);
@@ -157,7 +156,8 @@ public:
     setMaxVelocityScalingFactor(velocity_scaling);
     setMaxAccelerationScalingFactor(acceleration_scaling);
 
-    try{
+    try
+    {
       if (getPickPlaceJointSolutions(pick_pose, place_pose, "tool0", 1.0, seed, pick_state, place_state))
       {
         // compute actual pick/place points
@@ -173,16 +173,17 @@ public:
             new moveit_simple::JointTrajectoryPoint(pick_state, 0.0, "pick_point"));
         std::unique_ptr<moveit_simple::TrajectoryPoint> pick_point2 = std::unique_ptr<moveit_simple::TrajectoryPoint>(
             new moveit_simple::JointTrajectoryPoint(pick_state, 0.0, "pick_point"));
-        std::unique_ptr<moveit_simple::TrajectoryPoint> pick_down_point = std::unique_ptr<moveit_simple::TrajectoryPoint>(
-            new moveit_simple::CartTrajectoryPoint(pick_down_pose, 0.0, "pick_down_point"));
+        std::unique_ptr<moveit_simple::TrajectoryPoint> pick_down_point =
+            std::unique_ptr<moveit_simple::TrajectoryPoint>(
+                new moveit_simple::CartTrajectoryPoint(pick_down_pose, 0.0, "pick_down_point"));
 
         std::unique_ptr<moveit_simple::TrajectoryPoint> place_point = std::unique_ptr<moveit_simple::TrajectoryPoint>(
             new moveit_simple::JointTrajectoryPoint(place_state, 0.0, "place_point"));
         std::unique_ptr<moveit_simple::TrajectoryPoint> place_point2 = std::unique_ptr<moveit_simple::TrajectoryPoint>(
             new moveit_simple::JointTrajectoryPoint(place_state, 0.0, "place_point"));
-        std::unique_ptr<moveit_simple::TrajectoryPoint> place_down_point = std::unique_ptr<moveit_simple::TrajectoryPoint>(
-            new moveit_simple::CartTrajectoryPoint(place_down_pose, 0.0, "place_down_point"));
-
+        std::unique_ptr<moveit_simple::TrajectoryPoint> place_down_point =
+            std::unique_ptr<moveit_simple::TrajectoryPoint>(
+                new moveit_simple::CartTrajectoryPoint(place_down_pose, 0.0, "place_down_point"));
 
         // TODO(henningkayser): move to pre-pose that doesn't collide when interpolating to pick_point
         openGripper();
@@ -251,11 +252,9 @@ public:
   ros::NodeHandle nh_;
   ros::Publisher robotiq_publisher_;
 };
-
-
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
   std::string name = "moveit_simple";
   ros::init(argc, argv, name);
@@ -270,12 +269,12 @@ int main(int argc, char **argv)
   // TODO(henningkayser): add suitable waypoints to showcase this feature
   demo->setLimitJointWindup(true);
   std::map<size_t, double> seed_fractions;
-  seed_fractions[0] = 0.5; // limit base windup
-  seed_fractions[1] = 0.5; // limit shoulder windup
-  seed_fractions[2] = 0.5; // limit elbow windup
-  seed_fractions[3] = 0.5; // limit wrist 1 joint windup
-  seed_fractions[4] = 0.5; // limit wrist 2 joint windup
-  seed_fractions[5] = 0.5; // limit wrist 3 joint windup
+  seed_fractions[0] = 0.5;  // limit base windup
+  seed_fractions[1] = 0.5;  // limit shoulder windup
+  seed_fractions[2] = 0.5;  // limit elbow windup
+  seed_fractions[3] = 0.5;  // limit wrist 1 joint windup
+  seed_fractions[4] = 0.5;  // limit wrist 2 joint windup
+  seed_fractions[5] = 0.5;  // limit wrist 3 joint windup
   demo->setIKSeedStateFractions(seed_fractions);
 
   demo->setIKSeedMidPoint("ready");
@@ -293,5 +292,4 @@ int main(int argc, char **argv)
   // ros::waitForShutdown();
   ros::shutdown();
   return 0;
-
 }
