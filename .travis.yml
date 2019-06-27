@@ -9,6 +9,8 @@ notifications:
   email:
     recipients:
       - mike@picknik.ai
+before_install:
+  - export DOCKER_IMAGE=moveit/moveit:master-source
 env:
   matrix:
     - ROS_DISTRO=kinetic  ROS_REPO=ros-shadow-fixed UPSTREAM_WORKSPACE=./ur5_moveit_simple.rosinstall
