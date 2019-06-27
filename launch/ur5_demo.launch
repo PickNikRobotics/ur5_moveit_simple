@@ -1,68 +1,18 @@
 <?xml version="1.0"?>
 <launch>
-  <!-- Unit test launch file -->
-  <!-- The name of the parameter under which the URDF is loaded -->
-  <arg name="robot_description" default="robot_description"/>
-
+  <arg name="run_demo" default="true"/>
   <!-- Debug Info -->
   <arg name="debug" default="false" />
   <arg unless="$(arg debug)" name="launch_prefix" value="" />
   <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
 
-  <!-- Launch UR5 -->
-  <include file="$(find picknik_ur5_moveit_config)/launch/planning_context.launch">
-    <arg name="load_robot_description" value="true"/>
-  </include>
+  <arg name="sim" default="true"/>
+  <arg name="robot_ip" default="10.0.1.133" />
 
-  <arg name="sim" default="true" />
-  <arg name="robot_ip" default="127.0.1.1"/>
-  <arg name="simulate_robotiq" default="true" />
+  <!-- Load up parameter server, based on standard planning_context.launch moveit file-->
+  <!-- The name of the parameter under which the URDF is loaded -->
+  <arg name="robot_description" default="robot_description"/>
 
-  <!-- Nodes for simulating robot motion and state -->
-  <!-- <group if="$(arg sim)"> -->
-    <!-- <node name="joint_trajectory_action" type="joint_trajectory_action" pkg="industrial_robot_client"/> -->
-    <!-- <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/> -->
-    <!-- <node name="robot_simulator" pkg="industrial_robot_simulator" type="industrial_robot_simulator"/> -->
-  <!-- </group> -->
-
-  <!-- Launch controller manager in this namespace -->
-  <include if="$(arg sim)" ns="ur5_demo" file="$(find picknik_ur5_moveit_config)/launch/trajectory_execution.launch.xml">
-    <arg name="moveit_manage_controllers" value="true" />
-    <arg name="moveit_controller_manager" value="fake" />
-    <arg name="robot_ip" value="$(arg robot_ip)"/>
-  </include>
-
-  <!-- Launch controller manager in this namespace -->
-  <include unless="$(arg sim)" ns="ur5_demo" file="$(find picknik_ur5_moveit_config)/launch/trajectory_execution.launch.xml">
-    <arg name="moveit_manage_controllers" value="true" />
-    <arg name="moveit_controller_manager" value="ur5"/>
-    <!-- <arg name="simulate_robotiq" value="$(arg simulate_robotiq)"/> -->
-    <arg name="robot_ip" value="$(arg robot_ip)"/>
-  </include>
-
-  <!-- If we do not have a robot connected, we publish fake joint states -->
-  <!-- TODO (mlautman): put correct source and add trajectory execution functionality. -->
-  <!-- TODO (mlautman): add unless fake execution that launches ur_modern_driver bringup. -->
-  <node if="$(arg sim)" name="joint_state_publisher" pkg="joint_state_publisher"
-        type="joint_state_publisher">
-    <rosparam param="source_list">[/ur5_demo/fake_controller_joint_states, /joint_states]</rosparam>
-  </node>
-  <node unless="$(arg sim)" name="joint_state_publisher" pkg="joint_state_publisher"
-        type="joint_state_publisher">
-    <rosparam param="source_list">[/ur5_demo/joint_states, /simple_gripper/joint_states]</rosparam>
-  </node>
-
-  <!-- Given the published joint states, publish tf for the robot links -->
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen" />
-
-  <!-- URDF file for Custom Tool  -->
-  <arg name="urdf_file_custom_tool" default="$(find ur5_moveit_simple)/urdf/ur5_custom_tool.urdf"/>
-  <!-- Load up Custom Tool Frame from URDF and pubish it to TF -->
-  <group ns="tool_frame">
-    <!-- Load universal robot description format (URDF) for Custom Tool -->
-    <param name="$(arg robot_description)" textfile="$(arg urdf_file_custom_tool)"/>
-    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
-  </group>
 
   <!-- Load Joint Names from the yaml files to override default joint names (Joint_1,..) -->
   <rosparam command="load" file="$(find ur5_moveit_simple)/config/joint_names.yaml"/>
@@ -74,7 +24,39 @@
   <!-- Static tranform publisher between table and world -->
   <node pkg="tf" type="static_transform_publisher" name="tfdummy" args="0 0 0 0 0 0 /world /table 10" />
 
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen" />
+
+  <group if="$(arg sim)">
+    <node name="joint_trajectory_action" type="joint_trajectory_action" pkg="industrial_robot_client"/>
+    <node name="robot_simulator" pkg="industrial_robot_simulator" type="industrial_robot_simulator"/>
+    <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
+    <include file="$(find picknik_ur5_moveit_config)/launch/planning_context.launch">
+      <arg name="load_robot_description" value="true"/>
+    </include>
+  </group>
+
+  <group unless="$(arg sim)">
+
+    <remap from="/vel_based_pos_traj_controller/follow_joint_trajectory" to="/joint_trajectory_action"/>
+    <include file="$(find picknik_ur5_moveit_config)/launch/ur5_ros_control.launch">
+      <arg name="robot_ip"         value="$(arg robot_ip)"/>
+      <arg name="limited"          value="false"/>
+      <arg name="load_description" value="false" />
+    </include>
+
+    <!-- Launch moveit -->
+    <include file="$(find picknik_ur5_moveit_config)/launch/move_group.launch">
+      <arg name="debug" default="$(arg debug)" />
+    </include>
+
+  </group>
+  <!-- Run Rviz and load the default config to see the state of the move_group node -->
+  <include file="$(find picknik_ur5_moveit_config)/launch/moveit_rviz.launch">
+    <arg name="rviz_config" value="$(find ur5_moveit_simple)/launch/ur5_moveit_simple.rviz"/>
+    <arg name="debug" value="$(arg debug)"/>
+  </include>
+
   <!-- Test Node -->
-  <node name="ur5_demo" pkg="ur5_moveit_simple" type="ur5_demo"
+  <node if="$(arg run_demo)" name="ur5_demo" pkg="ur5_moveit_simple" type="ur5_demo"
   launch-prefix="$(arg launch_prefix)" />
 </launch>

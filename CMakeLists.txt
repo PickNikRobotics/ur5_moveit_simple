@@ -17,8 +17,10 @@ find_package(catkin REQUIRED COMPONENTS
   rosparam_shortcuts
   rviz_visual_tools
   moveit_simple
+  moveit_visual_tools
   tf
   moveit_core
+  robotiq_2f_gripper_control
 )
 
 # System dependencies are found with CMake's conventions
@@ -33,6 +35,7 @@ catkin_package(
     roscpp
     tf
     moveit_core
+    robotiq_2f_gripper_control
   INCLUDE_DIRS
   LIBRARIES
     ${PROJECT_NAME}

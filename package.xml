@@ -20,10 +20,12 @@
   <depend>rosparam_shortcuts</depend>
   <depend>eigen</depend>
   <depend>rviz_visual_tools</depend>
+  <depend>moveit_visual_tools</depend>
   <depend>moveit_simple</depend>
   <depend>ur5_moveit_config</depend>
   <depend>moveit_core</depend>
   <depend>tf</depend>
+  <depend>robotiq_2f_gripper_control</depend>
 
   <depend version_eq="3.9">clang-format</depend>
 
